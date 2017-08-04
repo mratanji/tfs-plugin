@@ -83,7 +83,7 @@ public class NewWorkspaceCommand extends AbstractCallableCommand implements Call
                 VersionControlConstants.AUTHENTICATED_USER,
                 VersionControlConstants.AUTHENTICATED_USER,
                 null /* TODO: set comment to something nice/useful */,
-                WorkspaceLocation.SERVER /* TODO: pull request #33 adds LOCAL support */,
+                WorkspaceLocation.LOCAL /* TODO: pull request #33 adds LOCAL support */,
                 WorkspaceOptions.NONE
         );
 

@@ -50,7 +50,7 @@ public class BuildVariableResolver implements VariableResolver<String> {
         });
         lazyResolvers.put("BUILD_NUMBER", new LazyResolver() {
             public String getValue() {
-                return Integer.toString(Integer.toString(job.getNextBuildNumber()-1);
+                return Integer.toString(job.getNextBuildNumber()-1);
             }            
         });
     }
