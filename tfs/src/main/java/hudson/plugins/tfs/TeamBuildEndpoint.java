@@ -12,6 +12,7 @@ import hudson.plugins.tfs.model.BuildCommand;
 import hudson.plugins.tfs.model.BuildWithParametersCommand;
 import hudson.plugins.tfs.model.PingCommand;
 import hudson.plugins.tfs.model.TeamBuildPayload;
+import hudson.plugins.tfs.telemetry.TelemetryHelper;
 import hudson.plugins.tfs.util.EndpointHelper;
 import hudson.plugins.tfs.util.MediaType;
 import jenkins.model.Jenkins;
@@ -105,14 +106,12 @@ public class TeamBuildEndpoint implements UnprotectedRootAction {
                     final String encodedJobName = restOfPath.substring(firstSlash + 1);
                     try {
                         jobName = URLDecoder.decode(encodedJobName, MediaType.UTF_8.name());
-                    }
-                    catch (final UnsupportedEncodingException e) {
+                    } catch (final UnsupportedEncodingException e) {
                         throw new Error(e);
                     }
                     return true;
                 }
-            }
-            else {
+            } else {
                 commandName = restOfPath;
             }
         }
@@ -120,18 +119,20 @@ public class TeamBuildEndpoint implements UnprotectedRootAction {
         return false;
     }
 
+    /**
+     * External endpoint for getting a description of the endpoints in this class.
+     */
     public HttpResponse doIndex(final HttpServletRequest request) throws IOException {
         final Class<? extends TeamBuildEndpoint> me = this.getClass();
         final InputStream stream = me.getResourceAsStream("TeamBuildEndpoint.html");
-        final Jenkins instance = Jenkins.getInstance();
+        final Jenkins instance = Jenkins.getActiveInstance();
         final String rootUrl = instance.getRootUrl();
         final String commandRows = describeCommands(COMMAND_FACTORIES_BY_NAME, URL_NAME);
         try {
             final String template = IOUtils.toString(stream, MediaType.UTF_8);
             final String content = String.format(template, URL_NAME, commandRows, rootUrl);
             return HttpResponses.html(content);
-        }
-        finally {
+        } finally {
             IOUtils.closeQuietly(stream);
         }
     }
@@ -167,8 +168,7 @@ public class TeamBuildEndpoint implements UnprotectedRootAction {
 
             if (response.containsKey("created")) {
                 rsp.setStatus(SC_CREATED);
-            }
-            else {
+            } else {
                 rsp.setStatus(SC_OK);
             }
             rsp.setContentType(MediaType.APPLICATION_JSON_UTF_8);
@@ -176,15 +176,12 @@ public class TeamBuildEndpoint implements UnprotectedRootAction {
             final String responseJsonString = response.toString();
             w.print(responseJsonString);
             w.println();
-        }
-        catch (final IllegalArgumentException e) {
+        } catch (final IllegalArgumentException e) {
             LOGGER.log(Level.WARNING, "IllegalArgumentException", e);
             EndpointHelper.error(SC_BAD_REQUEST, e);
-        }
-        catch (final ForwardToView e) {
+        } catch (final ForwardToView e) {
             throw e;
-        }
-        catch (final Exception e) {
+        } catch (final Exception e) {
             final String template = "Error while performing reaction to '%s' command.";
             final String message = String.format(template, commandName);
             LOGGER.log(Level.SEVERE, message, e);
@@ -241,7 +238,7 @@ public class TeamBuildEndpoint implements UnprotectedRootAction {
     }
 
     private Job getJob(final String jobName, final StaplerRequest req) {
-        final Jenkins jenkins = Jenkins.getInstance();
+        final Jenkins jenkins = Jenkins.getActiveInstance();
 
         Job job = jenkins.getItemByFullName(jobName, Job.class);
 
@@ -252,8 +249,8 @@ public class TeamBuildEndpoint implements UnprotectedRootAction {
              * assume the jobname is in the format of ${multibranchPipelineJobname}/${branchName].
              */
             final Item mbPipelineJobItem = jenkins.getItemByFullName(jobName);
-            final Item item = (mbPipelineJobItem != null) ?
-                    mbPipelineJobItem : jenkins.getItemByFullName(getJobNameFromNestedFolder(jobName));
+            final Item item = (mbPipelineJobItem != null)
+                    ? mbPipelineJobItem : jenkins.getItemByFullName(getJobNameFromNestedFolder(jobName));
 
             if (item != null) {
                 final Collection<? extends Job> allJobs = item.getAllJobs();
@@ -312,6 +309,9 @@ public class TeamBuildEndpoint implements UnprotectedRootAction {
         return response;
     }
 
+    /**
+     * External endpoint for testing the connection to Jenkins.
+     */
     public void doPing(
             final StaplerRequest request,
             final StaplerResponse response,
@@ -320,19 +320,33 @@ public class TeamBuildEndpoint implements UnprotectedRootAction {
         dispatch(request, response, delay);
     }
 
+    /**
+     * External endpoint for triggering a build.
+     */
     public void doBuild(
             final StaplerRequest request,
             final StaplerResponse response,
             @QueryParameter final TimeDuration delay
     ) throws IOException {
+        // Send telemetry
+        TelemetryHelper.sendEvent("team-build", new TelemetryHelper.PropertyMapBuilder()
+                .build());
+
         dispatch(request, response, delay);
     }
 
+    /**
+     * External endpoint for triggering a build with paramters.
+     */
     public void doBuildWithParameters(
             final StaplerRequest request,
             final StaplerResponse response,
             @QueryParameter final TimeDuration delay
     ) throws IOException {
+        // Send telemetry
+        TelemetryHelper.sendEvent("team-build-parameters", new TelemetryHelper.PropertyMapBuilder()
+                .build());
+
         dispatch(request, response, delay);
     }
 

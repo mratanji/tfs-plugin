@@ -8,13 +8,22 @@ import hudson.plugins.tfs.UnsupportedIntegrationAction;
 import hudson.plugins.tfs.model.GitCodePushedEventArgs;
 import hudson.plugins.tfs.model.PullRequestMergeCommitCreatedEventArgs;
 import hudson.plugins.tfs.model.TeamGitStatus;
+import hudson.plugins.tfs.telemetry.TelemetryHelper;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.net.URI;
 
-public class TeamStatus {
+/**
+ * Creates and adds a TeamGitStatus to the run.
+ */
+public final class TeamStatus {
+    private TeamStatus() { }
+
+    /**
+     * Creates and adds a TeamGitStatus to the run.
+     */
     public static void createFromRun(@Nonnull final Run<?, ?> run, @Nonnull final TaskListener listener, final String featureDisplayName) throws IOException {
 
         if (!UnsupportedIntegrationAction.isSupported(run, listener)) {
@@ -34,12 +43,10 @@ public class TeamStatus {
             if (commitParameter instanceof PullRequestParameterAction) {
                 final PullRequestParameterAction prpa = (PullRequestParameterAction) commitParameter;
                 pullRequestMergeCommitCreatedEventArgs = prpa.getPullRequestMergeCommitCreatedEventArgs();
-            }
-            else {
+            } else {
                 pullRequestMergeCommitCreatedEventArgs = null;
             }
-        }
-        else {
+        } else {
             // TODO: try to guess based on what we _do_ have (i.e. RevisionParameterAction)
             return;
         }
@@ -48,18 +55,23 @@ public class TeamStatus {
         final TeamRestClient client = new TeamRestClient(collectionUri);
 
         final TeamGitStatus status = TeamGitStatus.fromRun(run);
+
+        // Send telemetry
+        TelemetryHelper.sendEvent("team-status", new TelemetryHelper.PropertyMapBuilder()
+                .serverContext(collectionUri.toString(), collectionUri.toString())
+                .pair("feature", featureDisplayName)
+                .pair("status", status.state.toString())
+                .build());
+
         // TODO: when code is pushed and polling happens, are we sure we built against the requested commit?
         if (pullRequestMergeCommitCreatedEventArgs != null) {
             if (pullRequestMergeCommitCreatedEventArgs.iterationId == -1) {
                 client.addPullRequestStatus(pullRequestMergeCommitCreatedEventArgs, status);
-            }
-            else {
+            } else {
                 client.addPullRequestIterationStatus(pullRequestMergeCommitCreatedEventArgs, status);
             }
         }
-        if (gitCodePushedEventArgs != null) {
-            client.addCommitStatus(gitCodePushedEventArgs, status);
-        }
+        client.addCommitStatus(gitCodePushedEventArgs, status);
 
         // TODO: we could contribute an Action to the run, recording the ID of the status we created
     }

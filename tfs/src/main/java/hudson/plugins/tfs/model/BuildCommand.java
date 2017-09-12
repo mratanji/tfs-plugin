@@ -1,3 +1,4 @@
+//CHECKSTYLE:OFF
 package hudson.plugins.tfs.model;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -85,7 +86,7 @@ public class BuildCommand extends AbstractCommand {
     protected JSONObject innerPerform(final BuildableItem buildableItem, final TimeDuration delay, final List<Action> extraActions) {
         final JSONObject result = new JSONObject();
 
-        final Jenkins jenkins = Jenkins.getInstance();
+        final Jenkins jenkins = Jenkins.getActiveInstance();
         final Queue queue = jenkins.getQueue();
         final Cause cause = new Cause.UserIdCause();
         final CauseAction causeAction = new CauseAction(cause);
@@ -161,7 +162,7 @@ public class BuildCommand extends AbstractCommand {
                     // erase value to avoid adding it a second time
                     commitId = null;
                 }
-                else if (name.equals(PULL_REQUEST_ID) && pullRequestId != null & d instanceof SimpleParameterDefinition) {
+                else if (name.equals(PULL_REQUEST_ID) && pullRequestId != null && d instanceof SimpleParameterDefinition) {
                     final SimpleParameterDefinition spd = (SimpleParameterDefinition) d;
                     parameterValue = spd.createValue(pullRequestId);
                     // erase value to avoid adding it a second time

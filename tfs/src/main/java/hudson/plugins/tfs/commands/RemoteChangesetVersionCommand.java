@@ -1,3 +1,4 @@
+//CHECKSTYLE:OFF
 package hudson.plugins.tfs.commands;
 
 import com.google.common.base.Strings;
@@ -30,7 +31,7 @@ import java.util.TimeZone;
  * @author Olivier Dagenais
  *
  */
-public class RemoteChangesetVersionCommand extends AbstractCallableCommand implements Callable<Integer, Exception> {
+public class RemoteChangesetVersionCommand extends AbstractCallableCommand<Integer, Exception> {
 
     private static final String QueryingTemplate = "Querying for remote changeset at '%s' as of '%s'...";
     private static final String ResultTemplate = "Query result is: Changeset #%d by '%s' on '%s'.";
