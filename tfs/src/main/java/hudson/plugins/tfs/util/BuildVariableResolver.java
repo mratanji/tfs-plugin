@@ -48,8 +48,8 @@ public class BuildVariableResolver implements VariableResolver<String> {
         });
         lazyResolvers.put("BUILD_NUMBER", new LazyResolver() {
             public String getValue() {
-                return Integer.toString(job.getNextBuildNumber()-1);
-            }            
+                return Integer.toString(job.getNextBuildNumber() - 1);
+            }
         });
     }
 
@@ -68,12 +68,12 @@ public class BuildVariableResolver implements VariableResolver<String> {
         lazyResolvers.put("USER_NAME", new LazyComputerResolver() {
             public String getValue(final Computer computer) throws IOException, InterruptedException {
                 return (String) computer.getSystemProperties().get("user.name");
-            }            
-        });        
+            }
+        });
         lazyResolvers.put("BUILD_NUMBER", new LazyResolver() {
             public String getValue() {
-                return Integer.toString(project.getNextBuildNumber()-1);
-            }            
+                return Integer.toString(project.getNextBuildNumber() - 1);
+            }
         });
     }
 
